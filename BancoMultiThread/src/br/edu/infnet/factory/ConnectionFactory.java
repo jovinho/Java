@@ -6,14 +6,19 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class ConnectionFactory {
-	public static Connection getConnection(){
-		try{
-			return DriverManager.getConnection("jdbc:mysql://localhost/database","root","");
+	public static Connection getConnection() {
+		Connection conn = null;
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			/*String url = "jdbc:mysql://localhost:3306/aula";*/
+			String url = "jdbc:mysql://localhost:3306/banco";
+			conn = DriverManager.getConnection(url, "root", "123");			
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
-		catch(SQLException e){
-			throw new RuntimeException(e);
-		}
-
+		return conn;
 	}
 
 }
