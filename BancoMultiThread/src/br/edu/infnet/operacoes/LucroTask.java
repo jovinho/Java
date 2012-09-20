@@ -4,44 +4,46 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.TimerTask;
 
-import br.edu.infnet.dao.BancoDAO;
-import br.edu.infnet.dao.BancoDAOImpl;
-import br.edu.infnet.dao.TransacaoDAO;
-import br.edu.infnet.dao.TransacaoDAOImpl;
-import br.edu.infnet.vo.Conta;
-import br.edu.infnet.vo.ContaPoupanca;
+import br.edu.infnet.conta.dao.ContaDAO;
+import br.edu.infnet.conta.dao.ContaDAOImpl;
+import br.edu.infnet.conta.vo.Conta;
+import br.edu.infnet.conta.vo.ContaPoupanca;
+import br.edu.infnet.transacao.dao.TransacaoDAO;
+import br.edu.infnet.transacao.dao.TransacaoDAOImpl;
+import br.edu.infnet.transacao.vo.Transacao;
 
 public class LucroTask extends TimerTask {
 
-	private BancoDAO bancoDAO = new BancoDAOImpl();
-	private List<Conta> listaDeContaPoupanca;
+	private ContaDAO bancoDAO = new ContaDAOImpl();
 	private TransacaoDAO transacaoDao = new TransacaoDAOImpl();
 
-	public void setListaDeContaPoupanca(List<Conta> listaDeContaPoupanca) {
-		this.listaDeContaPoupanca = listaDeContaPoupanca;
-	}
 
 	@Override
 	public void run() {
 		synchronized (this) {
-			for (Conta c : listaDeContaPoupanca) {
+			List<Conta> listaDeContas = bancoDAO.recuperarContas();
+			Transacao transacao = new Transacao();
+			transacao.setTipoOperacao("Lucro de 0.8%");
+			for (Conta c : listaDeContas) {
 				if (c instanceof ContaPoupanca) {
+					transacao.setContaOrigem(c);
 					Conta retorno = bancoDAO.getConta(c.getNumero());
-					BigDecimal saldoReajuste = retorno.getSaldoAtual();
-					saldoReajuste.add(saldoReajuste
-							.multiply(ContaPoupanca.PERCENTUAL_LUCRO));
+					double reajuste = retorno.getSaldoAtual().doubleValue() * ContaPoupanca.PERCENTUAL_LUCRO.doubleValue();
+					double valor = retorno.getSaldoAtual().doubleValue() +  reajuste;
+					BigDecimal saldoReajuste = new BigDecimal(valor);
 					bancoDAO.depositar(c, saldoReajuste);
 					c.setSaldoAtual(saldoReajuste);
-					transacaoDao.gravaTransacao(c, null,
-							saldoReajuste, "Lucro de 0.8%");
-					System.out.println("Transacao da conta " + c.getNumero()
+					transacao.setValorTransacao(new BigDecimal(reajuste));
+					transacaoDao.gravaTransacao(transacao); 
+				
+					System.out.println("Transacao de lucro da conta " + c.getNumero()
 							+ " gravada com sucesso");
 
 				}
 			}
 
 		}
-		System.out.println("Teste");
+		
 
 	}
 

@@ -1,13 +1,11 @@
 package br.edu.infnet.operacoes;
 
-import br.edu.infnet.dao.BancoDAOImpl;
-import br.edu.infnet.dao.BancoDAO;
-import br.edu.infnet.vo.Conta;
+import br.edu.infnet.conta.vo.Conta;
+import br.edu.infnet.transacao.vo.Transacao;
 
-public class Transferencia implements Runnable {
+public class Transferencia extends Operacao {
 
-	private static Conta contaOrigem;
-	private static Conta contaDestino;
+
 	private Saque saque;
 	private Deposito deposito;
 	private static Transferencia transferencia = new Transferencia();
@@ -22,34 +20,34 @@ public class Transferencia implements Runnable {
 
 	@Override
 	public void run() {
-		synchronized (this) {
+		Transacao transacao = Transacao.getTransacoes().get(Integer.parseInt(Thread.currentThread().getName()));
+		Integer numeroTransacao = Integer.parseInt(Thread.currentThread().getName());
+		Conta contaOrigem = transacao.getContaOrigem();
+		Conta contaDestino = transacao.getContaDestino();
+		synchronized (contaOrigem) {
 			if (contaOrigem != null && contaDestino != null) {
 				if (!contaOrigem.equals(contaDestino)) {
 					saque = Saque.getInstance();
 					deposito = Deposito.getInstance();
-					Saque.setConta(contaOrigem);
-					Deposito.setConta(contaDestino);
 					Thread deposito = new Thread(this.deposito);
+					deposito.setName(numeroTransacao.toString());
 					Thread saque = new Thread(this.saque);
+					saque.setName(numeroTransacao.toString());
 					deposito.setPriority(Thread.MAX_PRIORITY);
 					saque.setPriority(Thread.NORM_PRIORITY);
 					try {
-						deposito.start();
-					} catch (Exception e) {
-						System.out
-								.println("Ocorreu um erro na transferência, impossível continuar");
-					}
-					try {
+						
 						saque.start();
-						deposito.join();
+						deposito.start();
+						saque.join();
 					} catch (Exception e) {
 						System.out
-								.println("Ocorreu um erro na transferência, impossível continuar");
+								.println("Ocorreu um erro na transferï¿½ncia, impossï¿½vel continuar");
 					}
 
 				} else {
 					System.out
-							.println("Impossível realizar transferências na mesma conta");
+							.println("Impossï¿½vel realizar transferï¿½ncias na mesma conta");
 				}
 			} else {
 				System.out.println("Contas nulas");
@@ -58,13 +56,7 @@ public class Transferencia implements Runnable {
 
 	}
 	
-	public static void setContaOrigem(Conta contaOrigem) {
-		Transferencia.contaOrigem = contaOrigem;
-	}
-
-	public static void setContaDestino(Conta contaDestino) {
-		Transferencia.contaDestino = contaDestino;
-	}
+	
 
 
 }

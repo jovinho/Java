@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 
-import br.edu.infnet.vo.Conta;
+import br.edu.infnet.conta.vo.Conta;
 
 public class Lucro {
 	
@@ -16,7 +16,6 @@ public class Lucro {
 	public Lucro(Integer seconds, List<Conta> contas){
 		timer = new Timer();
 		LucroTask lucroTask = new LucroTask();
-		lucroTask.setListaDeContaPoupanca(contas);
 		timer.schedule(lucroTask, new Date(), seconds*1000);
 	}
 	

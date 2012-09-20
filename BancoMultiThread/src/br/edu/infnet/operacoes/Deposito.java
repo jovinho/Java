@@ -2,18 +2,14 @@ package br.edu.infnet.operacoes;
 
 import java.math.BigDecimal;
 
-import br.edu.infnet.dao.BancoDAOImpl;
-import br.edu.infnet.dao.BancoDAO;
-import br.edu.infnet.dao.TransacaoDAO;
-import br.edu.infnet.dao.TransacaoDAOImpl;
-import br.edu.infnet.vo.Conta;
+import br.edu.infnet.conta.vo.Conta;
+import br.edu.infnet.transacao.vo.Transacao;
 
-public class Deposito implements Runnable {
+public class Deposito extends Operacao {
 
-	private BancoDAO bancoDao = new BancoDAOImpl();
-	private static Conta conta;
+
 	private static Deposito deposito = new Deposito();
-	private TransacaoDAO transacaoDao = new TransacaoDAOImpl();
+	
 
 	private Deposito() {
 
@@ -25,19 +21,21 @@ public class Deposito implements Runnable {
 
 	@Override
 	public void run() {
-		if (conta != null) {
-			synchronized (this) {
+		Transacao transacao = Transacao.getTransacoes().get(Integer.parseInt(Thread.currentThread().getName()));
+		Conta conta = transacao.getContaOrigem();	
+		
 				Conta retorno = bancoDao.getConta(conta.getNumero());
 				if (null != retorno) {
+					double saldoComDeposito = retorno.getSaldoAtual().doubleValue() + transacao.getValorTransacao().doubleValue();
+					BigDecimal valor = new BigDecimal(saldoComDeposito);
 					boolean result = bancoDao.depositar(conta,
-							conta.getValorOperacao());
+							valor);
 					if (result) {
-						transacaoDao.gravaTransacao(conta, null, conta.getValorOperacao(), "Deposito");
+						transacaoDao.gravaTransacao(transacao);
 						System.out.println("Transacao da conta " + conta.getNumero() + " gravada com sucesso");
 						System.out.println("Deposito no valor de "
-								+ conta.getValorOperacao()
-								+ " realizado na conta " + conta.getNumero()
-								+ " Saldo Atual : " + conta.getSaldoAtual());
+								+ transacao.getValorTransacao()
+								+ " realizado na conta " + conta.getNumero());
 					}
 				} else {
 					System.out.println("Conta " + conta.getNumero()
@@ -46,14 +44,5 @@ public class Deposito implements Runnable {
 				}
 
 			}
-		}else{
-			throw new RuntimeException();
-		}
-	}
-
-
-	public static void setConta(Conta conta) {
-		Deposito.conta = conta;
-	}
-
+		
 }
